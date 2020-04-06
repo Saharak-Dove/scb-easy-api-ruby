@@ -1,0 +1,1 @@
+require 'scb_easy_api/client'
