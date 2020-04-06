@@ -5,11 +5,12 @@ module ScbEasyApi
   # API Client of SCB easy Ruby
   #
   #   @client ||= ScbEasyApi::Client.new do |config|
-  #     config.api_key = ENV["scb_api_key"]
-  #     config.api_secret = ENV["scb_api_secret"]
-  #     config.biller_id = ENV["scb_biller_id"]
-  #     config.merchant_id = ENV["merchant_id"]
-  #     config.terminal_id = ENV["terminal_id"]
+  #      config.api_key = ENV["scb_api_key"]
+  #      config.api_secret = ENV["scb_api_secret"]
+  #      config.biller_id = ENV["scb_biller_id"]
+  #      config.merchant_id = ENV["scb_merchant_id"]
+  #      config.terminal_id = ENV["scb_terminal_id"]
+  #      config.reference_prefix = ENV["scb_reference_prefix"]
   #   end
   
   class Client
