@@ -1,0 +1,15 @@
+require 'scb_easy_api'
+
+def client
+  @client ||= ScbEasyApi::Client.new do |config|
+    config.api_key = ENV["scb_api_key"]
+    config.api_secret = ENV["scb_api_secret"]
+    config.biller_id = ENV["scb_biller_id"]
+    config.merchant_id = ENV["scb_merchant_id"]
+    config.terminal_id = ENV["scb_terminal_id"]
+    config.reference_prefix = ENV["scb_reference_prefix"]
+    config.accept_language = ENV["scb_accept_language"] || 'EN'
+  end
+end
+
+puts client.create_paymemnt(1_000)

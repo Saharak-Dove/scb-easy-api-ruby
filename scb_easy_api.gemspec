@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.files       = ["lib/scb_easy_api.rb", "lib/scb_easy_api/client.rb"]
   s.homepage    = 'https://github.com/Saharak-Dove/scb-easy-api-ruby'
   s.license     = 'MIT'
-  
+  s.executables << 'scb_easy_api'
+
   s.add_dependency('rest-client')
 end
