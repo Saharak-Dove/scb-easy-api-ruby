@@ -11,16 +11,19 @@ module ScbEasyApi
   #      config.merchant_id = ENV["scb_merchant_id"]
   #      config.terminal_id = ENV["scb_terminal_id"]
   #      config.reference_prefix = ENV["scb_reference_prefix"]
-  #      config.accept_language = ENV["scb_accept_language"] || 'EN'
+  #      config.language = ENV["scb_language"] || 'EN'
+  #      config.is_sandbox = ENV["scb_is_sandbox"] || true
   #   end
   
   class Client
-    $HOST = "https://api-sandbox.partners.scb"
-    $OAUTH_PATH = "/partners/sandbox/v1/oauth/token"
-    $DEEPLINK_TRANSATIONS_PATH = "/partners/sandbox/v3/deeplink/transactions"
-    $QRCODE_PAYMENT_PATH = "/partners/sandbox/v1/payment/qrcode/create"
+    $OAUTH_PATH = "v1/oauth/token"
+    $DEEPLINK_TRANSATIONS_PATH = "v3/deeplink/transactions"
+    $QRCODE_PAYMENT_PATH = "v1/payment/qrcode/create"
+    $PAYMENT_CONFIRM_PATH = "v1/payment/merchant/rtp/confirm"
+    $PAYMENT_EWALLETS_PATH​ = "v1/payment/ewallets/qrcode/create"
+
     #  @return [String]
-    attr_accessor :api_key, :api_secret, :biller_id, :merchant_id, :terminal_id, :reference_prefix, :accept_language
+    attr_accessor :api_key, :api_secret, :biller_id, :merchant_id, :terminal_id, :reference_prefix, :language, :is_sandbox
 
     # Initialize a new client.
     #
@@ -31,6 +34,14 @@ module ScbEasyApi
         instance_variable_set("@#{key}", value)
       end
       yield(self) if block_given?
+    end
+
+    def endpoint
+      if is_sandbox.nil? || is_sandbox == true
+        @endpoint = "https://api-sandbox.partners.scb/partners/sandbox/"
+      else
+        @endpoint = "https://api.partners.scb/partners/"
+      end
     end
 
     def rest_client_api(url, method, headers, payload)
@@ -44,7 +55,7 @@ module ScbEasyApi
       end
     end
 
-    def headers_with_bearer
+    def headers
       api_key_required
 
       {
@@ -53,27 +64,35 @@ module ScbEasyApi
         resourceOwnerId: api_key,
         requestUId: SecureRandom.uuid,
         channel: 'scbeasy',
-        accept_language: accept_language || 'EN'
+        accept_language: language || 'EN'
       }
     end  
 
     def oauth_token
       api_key_required
 
-      rest_client_api("#{$HOST}#{$OAUTH_PATH}", "post", {
+      rest_client_api("#{endpoint}#{$OAUTH_PATH}", "post", {
         content_type: 'application/json', 
         resourceOwnerId: api_key,
         requestUId: SecureRandom.uuid,
-        accept_language: 'EN'
+        accept_language: language || 'EN'
       }, payload_token)
     end
 
-    def create_paymemnt(payment_amount)
-      rest_client_api("#{$HOST}#{$DEEPLINK_TRANSATIONS_PATH}", "post", headers_with_bearer, payload_transactions(payment_amount))
+    def create_paymemnt(amount)
+      rest_client_api("#{endpoint}#{$DEEPLINK_TRANSATIONS_PATH}", "post", headers, payload_transactions(amount))
     end
 
-    def create_qrcode_paymemnt(payment_amount)
-      rest_client_api("#{$HOST}#{$QRCODE_PAYMENT_PATH}", "post", headers_with_bearer, payload_qrcode_payment(payment_amount))
+    def create_qrcode_paymemnt(amount)
+      rest_client_api("#{endpoint}#{$QRCODE_PAYMENT_PATH}", "post", headers, payload_qrcode_payment(amount))
+    end
+
+    def create_qrcode_alipay(amount)
+      rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_PATH​}", "post", headers, payload_qrcode_ewallets(true, amount))
+    end
+
+    def create_qrcode_we_chat_pay(amount)
+      rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_PATH​}", "post", headers, payload_qrcode_ewallets(false, amount))
     end
 
     def payload_token(authorization_code = nil)
@@ -87,7 +106,7 @@ module ScbEasyApi
       }
     end
 
-    def payload_transactions(payment_amount)
+    def payload_transactions(amount)
       biller_id_required
       merchant_id_required
       terminal_id_required
@@ -99,7 +118,7 @@ module ScbEasyApi
         sessionValidityPeriod: 60,
         sesisionValidUntil: "",
         billPayment: {
-          paymentAmount: payment_amount,
+          paymentAmount: amount,
           accountTo: biller_id,
           ref1: "#{reference_prefix}#{rand(1000000..999999999)}",
           ref2: "#{reference_prefix}#{rand(1000000..999999999)}",
@@ -109,7 +128,7 @@ module ScbEasyApi
           merchantId: merchant_id,
           terminalId: terminal_id,
           orderReference: reference_prefix,
-          paymentAmount: payment_amount
+          paymentAmount: amount
         },
         merchantMetaData: {
           callbackUrl: "",
@@ -151,6 +170,19 @@ module ScbEasyApi
         terminalId: terminal_id,
         invoice: "INVOICE",
         csExtExpiryTime: "60"
+      }
+    end
+
+    def payload_qrcode_ewallets(is_alipay, amount)
+      terminal_id_required
+      reference_prefix_required
+
+      {
+        tranType: is_alipay ? 'A' : 'W',
+        companyId: '001',
+        terminalId: terminal_id,
+        outTradeNo: "TRANSACTIONREFERENCE",
+        totalFee: amount
       }
     end
 

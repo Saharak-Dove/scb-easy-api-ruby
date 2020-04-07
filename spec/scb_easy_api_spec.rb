@@ -4,11 +4,6 @@ require 'webmock/rspec'
 WebMock.allow_net_connect!
 
 describe ScbEasyApi::Client do
-  $HOST = "https://api-sandbox.partners.scb"
-  $OAUTH_PATH = "/partners/sandbox/v1/oauth/token"
-  $DEEPLINK_TRANSATIONS_PATH = "/partners/sandbox/v3/deeplink/transactions"
-  $QRCODE_PAYMENT_PATH = "/partners/sandbox/v1/payment/qrcode/create"
-
   def dummy_config
     {
       api_key: 'l72f8c215460ac4c2ea72702c3a48b5c62',
@@ -17,7 +12,7 @@ describe ScbEasyApi::Client do
       merchant_id: '790464285535354',
       terminal_id: '083028403369375',
       reference_prefix: 'GXZ',
-      accept_language: 'EN',
+      language: 'EN',
     }
   end
 
@@ -29,7 +24,7 @@ describe ScbEasyApi::Client do
       config.merchant_id = dummy_config[:merchant_id]
       config.terminal_id = dummy_config[:terminal_id]
       config.reference_prefix = dummy_config[:reference_prefix]
-      config.accept_language = dummy_config[:accept_language]
+      config.language = dummy_config[:language]
     end
   end
 
@@ -56,4 +51,20 @@ describe ScbEasyApi::Client do
     expect(response['status']['code']).to eq(1000)
     expect(response['status']['description']).to eq('Success')
   end
-end  
+
+  it 'create QR Code paymemnt for Alipay' do
+    client = generate_client
+    response = client.create_qrcode_alipay(5000)
+    
+    expect(response['status']['code']).to eq(1000)
+    expect(response['status']['description']).to eq('Success')
+  end
+
+  it 'create QR Code paymemnt for WeChat pay' do
+    client = generate_client
+    response = client.create_qrcode_we_chat_pay(10000)
+    
+    expect(response['status']['code']).to eq(1000)
+    expect(response['status']['description']).to eq('Success')
+  end
+end
