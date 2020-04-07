@@ -11,6 +11,13 @@ Gem::Specification.new do |s|
   s.files       = ["lib/scb_easy_api.rb", "lib/scb_easy_api/client.rb"]
   s.homepage    = 'https://github.com/Saharak-Dove/scb-easy-api-ruby'
   s.license     = 'MIT'
-  
-  s.add_dependency('rest-client')
+  s.executables << 'scb_easy_api'
+
+  s.add_dependency('rest-client', '~> 2.0.1')
+
+  s.add_development_dependency 'addressable', '~> 2.3'
+  s.add_development_dependency 'bundler', '~> 1.11'
+  s.add_development_dependency 'rake', '~> 13.0'
+  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_development_dependency 'webmock', '~> 3.8'
 end

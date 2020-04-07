@@ -11,6 +11,7 @@ module ScbEasyApi
   #      config.merchant_id = ENV["scb_merchant_id"]
   #      config.terminal_id = ENV["scb_terminal_id"]
   #      config.reference_prefix = ENV["scb_reference_prefix"]
+  #      config.accept_language = ENV["scb_accept_language"] || 'EN'
   #   end
   
   class Client
@@ -19,7 +20,7 @@ module ScbEasyApi
     $DEEPLINK_TRANSATIONS_PATH = "/partners/sandbox/v3/deeplink/transactions"
     $QRCODE_PAYMENT_PATH = "/partners/sandbox/v1/payment/qrcode/create"
     #  @return [String]
-    attr_accessor :api_key, :api_secret, :biller_id, :merchant_id, :terminal_id, :reference_prefix
+    attr_accessor :api_key, :api_secret, :biller_id, :merchant_id, :terminal_id, :reference_prefix, :accept_language
 
     # Initialize a new client.
     #
@@ -32,64 +33,50 @@ module ScbEasyApi
       yield(self) if block_given?
     end
 
+    def rest_client_api(url, method, headers, payload)
+      response = RestClient::Request.new({
+        url: url,
+        method: method.to_sym,
+        headers: headers,
+        payload: payload.to_json
+      }).execute do |response, request, result|
+        return JSON.parse(response.to_str)
+      end
+    end
+
+    def headers_with_bearer
+      api_key_required
+
+      {
+        Authorization: "Bearer #{oauth_token['data']['accessToken']}",
+        content_type: 'application/json', 
+        resourceOwnerId: api_key,
+        requestUId: SecureRandom.uuid,
+        channel: 'scbeasy',
+        accept_language: accept_language || 'EN'
+      }
+    end  
+
     def oauth_token
       api_key_required
 
-      response = RestClient::Request.new({
-        method: :post,
-        url: "#{$HOST}#{$OAUTH_PATH}",
-        headers: {
-          content_type: 'application/json', 
-          resourceOwnerId: api_key,
-          requestUId: SecureRandom.uuid,
-          accept_language: 'EN'
-        },
-        payload: payload​_token().to_json
-      }).execute do |response, request, result|
-        return JSON.parse(response.to_str)
-      end
+      rest_client_api("#{$HOST}#{$OAUTH_PATH}", "post", {
+        content_type: 'application/json', 
+        resourceOwnerId: api_key,
+        requestUId: SecureRandom.uuid,
+        accept_language: 'EN'
+      }, payload_token)
     end
 
-    def create_paymemnt(payment_amount = 0)
-      api_key_required
-
-      response = RestClient::Request.new({
-        method: :post,
-        url: "#{$HOST}#{$DEEPLINK_TRANSATIONS_PATH}",
-        headers: {
-          Authorization: "Bearer #{oauth_token['data']['accessToken']}",
-          content_type: 'application/json', 
-          resourceOwnerId: api_key,
-          requestUId: SecureRandom.uuid,
-          channel: 'scbeasy',
-          accept_language: 'EN'
-        },
-        payload: payload​_transactions(payment_amount).to_json
-      }).execute do |response, request, result|
-        return JSON.parse(response.to_str)
-      end
+    def create_paymemnt(payment_amount)
+      rest_client_api("#{$HOST}#{$DEEPLINK_TRANSATIONS_PATH}", "post", headers_with_bearer, payload_transactions(payment_amount))
     end
 
-    def create_qrcode_paymemnt(payment_amount = 0)
-      api_key_required
-
-      response = RestClient::Request.new({
-        method: :post,
-        url: "#{$HOST}#{$QRCODE_PAYMENT_PATH}",
-        headers: {
-          Authorization: "Bearer #{oauth_token['data']['accessToken']}",
-          content_type: 'application/json', 
-          resourceOwnerId: api_key,
-          requestUId: SecureRandom.uuid,
-          accept_language: 'EN'
-        },
-        payload: payload​_qrcode_payment(payment_amount).to_json
-      }).execute do |response, request, result|
-        return JSON.parse(response.to_str)
-      end
+    def create_qrcode_paymemnt(payment_amount)
+      rest_client_api("#{$HOST}#{$QRCODE_PAYMENT_PATH}", "post", headers_with_bearer, payload_qrcode_payment(payment_amount))
     end
 
-    def payload​_token(authorization_code = nil)
+    def payload_token(authorization_code = nil)
       api_key_required
       api_secret_required
 
@@ -100,7 +87,7 @@ module ScbEasyApi
       }
     end
 
-    def payload​_transactions(payment_amount)
+    def payload_transactions(payment_amount)
       biller_id_required
       merchant_id_required
       terminal_id_required
@@ -146,7 +133,7 @@ module ScbEasyApi
       }
     end
 
-    def payload​_qrcode_payment(amount)
+    def payload_qrcode_payment(amount)
       biller_id_required
       merchant_id_required
       terminal_id_required
