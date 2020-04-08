@@ -20,7 +20,9 @@ module ScbEasyApi
     $DEEPLINK_TRANSATIONS_PATH = "v3/deeplink/transactions"
     $QRCODE_PAYMENT_PATH = "v1/payment/qrcode/create"
     $PAYMENT_CONFIRM_PATH = "v1/payment/merchant/rtp/confirm"
-    $PAYMENT_EWALLETS_PATH​ = "v1/payment/ewallets/qrcode/create"
+    $PAYMENT_EWALLETS_CREATE_PATH​ = "v1/payment/ewallets/qrcode/create"
+    $PAYMENT_EWALLETS_CANCEL_PATH​ = "v1/payment/ewallets/cancel"
+    $PAYMENT_EWALLETS_PAY_PATH​ = "v1/payment/ewallets/pay"
 
     #  @return [String]
     attr_accessor :api_key, :api_secret, :biller_id, :merchant_id, :terminal_id, :reference_prefix, :language, :is_sandbox
@@ -87,12 +89,46 @@ module ScbEasyApi
       rest_client_api("#{endpoint}#{$QRCODE_PAYMENT_PATH}", "post", headers, payload_qrcode_payment(amount))
     end
 
-    def create_qrcode_alipay(amount)
-      rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_PATH​}", "post", headers, payload_qrcode_ewallets(true, amount))
+    def create_qrcode_alipay(company_id, amount)
+      payload = payload_qrcode_ewallets(true, company_id, amount)
+      resp = rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_CREATE_PATH​}", "post", headers, payload)
+      resp['outTradeNo'] = payload[:outTradeNo]
+
+      resp
     end
 
-    def create_qrcode_we_chat_pay(amount)
-      rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_PATH​}", "post", headers, payload_qrcode_ewallets(false, amount))
+    def create_qrcode_we_chat_pay(company_id, amount)
+      payload = payload_qrcode_ewallets(false, company_id, amount)
+      resp = rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_CREATE_PATH​}", "post", headers, payload)
+      resp['outTradeNo'] = payload[:outTradeNo]
+
+      resp
+    end
+
+    def cancel_payment_alipay(company_id, out_trade_no)
+      payload = payload_cancel_ewallets(true, company_id, out_trade_no)
+      rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_CANCEL_PATH​}", "post", headers, payload)
+    end
+
+    def cancel_payment_we_chat_pay(company_id, out_trade_no)
+      payload = payload_cancel_ewallets(false, company_id, out_trade_no)
+      rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_CANCEL_PATH​}", "post", headers, payload)
+    end
+
+    def pay_with_alipay(company_id, amount, buyer_identity_code)
+      payload = payload_ewallets_pay(true, company_id, amount, buyer_identity_code)
+      resp = rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_CREATE_PATH​}", "post", headers, payload)
+      resp['outTradeNo'] = payload[:outTradeNo]
+
+      resp
+    end
+
+    def pay_with_we_chat_pay(company_id, amount, buyer_identity_code)
+      payload = payload_ewallets_pay(false, company_id, amount, buyer_identity_code)
+      resp = rest_client_api("#{endpoint}#{$PAYMENT_EWALLETS_CREATE_PATH​}", "post", headers, payload)
+      resp['outTradeNo'] = payload[:outTradeNo]
+
+      resp
     end
 
     def payload_token(authorization_code = nil)
@@ -173,18 +209,44 @@ module ScbEasyApi
       }
     end
 
-    def payload_qrcode_ewallets(is_alipay, amount)
+    def payload_qrcode_ewallets(is_alipay, company_id, amount)
       terminal_id_required
       reference_prefix_required
 
       {
         tranType: is_alipay ? 'A' : 'W',
-        companyId: '001',
+        companyId: company_id,
         terminalId: terminal_id,
-        outTradeNo: "TRANSACTIONREFERENCE",
+        outTradeNo: "SCB#{rand(1000000..999999999)}",
         totalFee: amount
       }
     end
+
+    def payload_cancel_ewallets(is_alipay, company_id, out_trade_no)
+      terminal_id_required
+      reference_prefix_required
+
+      {
+        tranType: is_alipay ? 'A' : 'W',
+        companyId: company_id,
+        terminalId: terminal_id,
+        outTradeNo: out_trade_no
+      }
+    end
+
+    def payload_ewallets_pay(is_alipay, company_id, amount, buyer_identity_code)
+      terminal_id_required
+      reference_prefix_required
+
+      {
+        tranType: is_alipay ? 'A' : 'W',
+        companyId: company_id,
+        terminalId: terminal_id,
+        outTradeNo: "SCB#{rand(1000000..999999999)}",
+        totalFee: amount,
+        buyerIdentityCode: buyer_identity_code
+      }
+    end  
 
     private
 
