@@ -8,7 +8,10 @@ def client
     config.merchant_id = '790464285535354'
     config.terminal_id = '083028403369375'
     config.reference_prefix = 'GXZ'
+    config.language = ENV["scb_language"] || 'EN'
+    config.is_sandbox = ENV["scb_is_sandbox"] || true
   end
 end
 
-puts ScbEasyApi::Client.oauth_token
+puts client.oauth_token
+puts client.create_qrcode_alipay('001', 2000)
