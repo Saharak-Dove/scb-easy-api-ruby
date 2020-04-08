@@ -28,7 +28,7 @@ describe ScbEasyApi::Client do
     end
   end
 
-  it 'create oauth access token' do
+  it 'Create oauth access token' do
     client = generate_client
     response = client.oauth_token
     
@@ -36,7 +36,7 @@ describe ScbEasyApi::Client do
     expect(response['status']['description']).to eq('Success')
   end
 
-  it 'create paymemnt transactions' do
+  it 'Create paymemnt transactions' do
     client = generate_client
     response = client.create_paymemnt(2000)
     
@@ -44,7 +44,7 @@ describe ScbEasyApi::Client do
     expect(response['status']['description']).to eq('Deeplink successfully created')
   end
 
-  it 'create QR Code paymemnt' do
+  it 'Create QR Code paymemnt' do
     client = generate_client
     response = client.create_qrcode_paymemnt(2000)
     
@@ -52,17 +52,33 @@ describe ScbEasyApi::Client do
     expect(response['status']['description']).to eq('Success')
   end
 
-  it 'create QR Code paymemnt for Alipay' do
+  it 'Create QR Code paymemnt for Alipay' do
     client = generate_client
-    response = client.create_qrcode_alipay(5000)
+    response = client.create_qrcode_alipay('001', 5000)
     
     expect(response['status']['code']).to eq(1000)
     expect(response['status']['description']).to eq('Success')
   end
 
-  it 'create QR Code paymemnt for WeChat pay' do
+  it 'Create QR Code paymemnt for WeChat pay' do
     client = generate_client
-    response = client.create_qrcode_we_chat_pay(10000)
+    response = client.create_qrcode_we_chat_pay('001', 10000)
+    
+    expect(response['status']['code']).to eq(1000)
+    expect(response['status']['description']).to eq('Success')
+  end
+
+  it 'Pay with for Alipay' do
+    client = generate_client
+    response = client.pay_with_alipay('001', 5000, 1234567890)
+    
+    expect(response['status']['code']).to eq(1000)
+    expect(response['status']['description']).to eq('Success')
+  end
+
+  it 'Pay with WeChat pay' do
+    client = generate_client
+    response = client.pay_with_we_chat_pay('001', 10000, 1234567890)
     
     expect(response['status']['code']).to eq(1000)
     expect(response['status']['description']).to eq('Success')
