@@ -5,7 +5,7 @@
 
 ## Introduction
 
-The Scb Easy API SDK for Ruby makes it easy to develop bots using Scb Easy API
+The Scb Easy API SDK for Ruby makes it easy to develop using Scb Easy API
 
 ## Documentation
 
